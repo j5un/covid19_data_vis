@@ -1,2 +1,2 @@
 # covid19_data_vis
-CS498 Data Visualization Final Project
+This is a visualization of covid-19 data in the U.S.

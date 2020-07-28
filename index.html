@@ -136,8 +136,8 @@
     // Set up color scale
     var color = d3.scalePow()
       .exponent(0.3)
-      .domain([0, 6]) // 450^0.3
-      .range(d3.schemeReds[5]);
+      .domain([0, 40]) // ~200000^0.3
+      .range(d3.schemeReds[7]);
 
     // Set up time scale
     var parseDate = d3.timeParse("%Y-%m-%d");
@@ -168,28 +168,52 @@
         }
         )
       );
+
+      var county_data = 
+      topojson.feature(
+        topo_data,
+        topo_data.objects.counties
+      ).features;
+      new_york = [36081, 36005, 36047, 36085]
+      county_data.forEach(function (d) {
+        if (new_york.includes(+d.id)) {
+          d.id = "36061";
+          d.properties.name = "New York City"
+        }
+      }
+      );
+
+      var covid_data = files[1];
+      // covid_data.forEach(function (d) {
+      //   if (d.fips == "36061") {
+      //     console.log(JSON.stringify(d));
+      //   }
+      // }
+      // );
+      
       var dataByWeek = d3.nest()
         .key(function (d) { return +d.week; })
-        .map(files[1]);
+        .map(covid_data);
 
       var dataByCounty = d3.nest()
         .key(function (d) { return d.fips; })
-        .map(files[1]);
+        .map(covid_data);
       // console.log(JSON.stringify(dataByCounty));
 
       svg.append("g")
         .attr("id", "map")
         .selectAll("path")
         .data(
-          topojson.feature(
-            topo_data,
-            topo_data.objects.counties
-          ).features
+          // topojson.feature(
+          //   topo_data,
+          //   topo_data.objects.counties
+          // ).features
+          county_data
         )
         .join("path")
         .attr("class", "county")
         .attr("d", path)
-        .style("fill", color(0.001));
+        .style("fill", color(0));
 
       svg.select("#map")
         .append("path")
@@ -212,9 +236,10 @@
         .attr("class", "tooltip")
         .style("opacity", 0);
 
-      var factor = 9.255 // #mi^2 = factor * #px^2 (for Harris County, 1777 mi^2 or 192 px^2)
-      var legendText = ["0.1", "1", "5", "10", "20", "40"];
-      var legendColors = [color(0.1 * factor), color(1 * factor), color(5 * factor), color(10 * factor), color(20 * factor), color(40 * factor)];
+      var legendText = ["10", "10²", "10³", "10⁴", "10⁵", "10⁶"];
+      var legendColors = [color(1e1), color(1e2),
+                          color(1e3), color(1e4),
+                          color(1e5), color(1e6)];
 
       // var legend = svg.append("g")
       //   .attr("id", "legend");
@@ -254,7 +279,7 @@
         .attr("x", offset_x + 15)
         .attr("y", offset_y - 5)
         .style("text-anchor", "start")
-        .text("(cases/mi²)");
+        .text("(total cases)");
 
       function update(week) {
         slider.property("value", week);
@@ -267,8 +292,8 @@
 
         d3.selectAll(".county")
           .style("fill", function (d) {
-            // color according to case density
-            return (data.has(d.id)) ? color(data.get(d.id).cases / path.area(d)) : color(0.001);
+            // color according to case number
+            return (data.has(d.id)) ? color(data.get(d.id).cases) : color(1);
           }
           )
           .on("mouseover", function (d) {

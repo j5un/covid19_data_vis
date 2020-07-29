@@ -29,6 +29,10 @@
       border: 1px solid #ccc;
     }
 
+    #plot {
+      margin: 10px 0px 0px 0px;
+    }
+
     #map {
       margin: 10px 0px 0px 0px;
       padding: 0px;
@@ -102,6 +106,7 @@
     .wide {
       width: 200px;
     }
+
   </style>
 
 </head>
@@ -121,8 +126,12 @@
     </p>
 
     <h2 class="week"></h2>
-    <div class="slider" style="float:left;"></div>
-    <p>&nbsp;&nbsp;&nbsp;&nbsp;Usage: use slider bar to select a date; use scroll wheel to zoom in and out; hover over a county to display time series.</p>
+    <div style="width: 100%; overflow: hidden;">
+    <div class="slider" style="margin-bottom: 10px; float: left;"></div>
+    <div style="margin: 0px 0px 10px 250px;"><p style="color: steelblue;">Usage: use slider bar to select a date; 
+      use scroll wheel / double-click to zoom in; hover over a county to display time series.</p></div>
+    </div>
+
     <script>
       function showCity() {
         d3.select("#cities")

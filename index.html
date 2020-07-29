@@ -112,7 +112,18 @@
     <h1>U.S. Total Confirmed Covid-19 Cases by County</h1>
     <h2 class="week"></h2>
     <div class="slider"></div>
-    <!-- <div id="lgnd"></div> -->
+    <script>
+      function showCity() {
+        d3.select("#cities")
+        .style("opacity", 1);
+      }
+      function hideCity() {
+        d3.select("#cities")
+        .style("opacity", 0);
+      }
+    </script>
+    <button type="button" onclick="showCity()">Show Cities</button>
+    <button type="button" onclick="hideCity()">Hide Cities</button>
     <div id="plot"></div>
     <p>Source: <a href="https://github.com/nytimes/covid-19-data">
         Coronavirus (Covid-19) Data in the United States</a> published by New York Times</p>
@@ -158,6 +169,7 @@
     var promises = [];
     promises.push(d3.json("counties-albers-10m.json"));
     promises.push(d3.csv("us-counties-covid19-weekly.csv"));
+    promises.push(d3.csv("us-large-cities.csv"));
 
     Promise.all(promises).then(function (files) {
 
@@ -174,7 +186,8 @@
         topo_data,
         topo_data.objects.counties
       ).features;
-      new_york = [36081, 36005, 36047, 36085]
+      // Take special care of New York City
+      new_york = [36081, 36005, 36047, 36085];
       county_data.forEach(function (d) {
         if (new_york.includes(+d.id)) {
           d.id = "36061";
@@ -184,12 +197,6 @@
       );
 
       var covid_data = files[1];
-      // covid_data.forEach(function (d) {
-      //   if (d.fips == "36061") {
-      //     console.log(JSON.stringify(d));
-      //   }
-      // }
-      // );
       
       var dataByWeek = d3.nest()
         .key(function (d) { return +d.week; })
@@ -198,18 +205,11 @@
       var dataByCounty = d3.nest()
         .key(function (d) { return d.fips; })
         .map(covid_data);
-      // console.log(JSON.stringify(dataByCounty));
 
       svg.append("g")
         .attr("id", "map")
         .selectAll("path")
-        .data(
-          // topojson.feature(
-          //   topo_data,
-          //   topo_data.objects.counties
-          // ).features
-          county_data
-        )
+        .data(county_data)
         .join("path")
         .attr("class", "county")
         .attr("d", path)
@@ -281,6 +281,37 @@
         .style("text-anchor", "start")
         .text("(total cases)");
 
+      // Add city annotation
+      var projection = d3.geoAlbersUsa().scale(1300).translate([487.5, 305]); // https://github.com/topojson/us-atlas
+
+      var cities = svg.append("g")
+        .attr("id", "cities")
+        .selectAll("circle")
+        .data(files[2])
+        .enter()
+        .append("g")
+        .attr("transform", function (d) {
+          // console.log(projection([+d.LONGITUDE, +d.LATITUDE]));
+          return "translate(" + projection([
+            +d.LONGITUDE,
+            +d.LATITUDE
+          ]) + ")";
+        });
+
+      cities.append("circle")
+        .attr("r",2)
+        .attr("fill", "black");
+        // .attr("cx", function (d) { return projection([+d.LONGITUDE, +d.LATITUDE])[0]; })
+        // .attr("cy", function (d) { return projection([+d.LONGITUDE, +d.LATITUDE])[1]; });
+      
+      cities.append("text")
+        .attr("dx", 5)
+        .attr("dy", 15)
+        .text(d => d.NAME)
+        .style("font-size", 15)
+        .style("fill","black");
+
+      
       function update(week) {
         slider.property("value", week);
         d3.select(".week").text("Date: " + formatDate(timeScale.invert((week - 10) * 7)));

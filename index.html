@@ -109,9 +109,20 @@
 <body>
 
   <div id="content">
-    <h1>U.S. Total Confirmed Covid-19 Cases by County</h1>
+    <h1>The Evolution of Covid-19 in the U.S. and It's Correlation with Major Cities</h1>
+    <p>The coronavirus outbreak started in the U.S. in late February/early March, 2020. This webpage is a visualization of the evolutoin of the pandemic 
+      in the U.S. from the beginning of March, 2020. Total number of cases are shown by counties on the map. Additional details can be revealed by hovering 
+      your pointer over the map. 
+      <br><br>Several questions can be answered by the interactive visualization:
+      <li>By moving the slider from the beginning to the end, what can you say about the general trend of pandemic? Did it hit the coasts first? Did it hit the major cities first?</li>
+      <li>By zooming in and hovering over counties to inspect time series in detail, can you tell which regions have succesfully flattened the curve?</li>
+      <li>By toggling on and off the marks of the major cities, can you tell if there is a correlation between case number and population?</li>
+      <br>
+    </p>
+
     <h2 class="week"></h2>
-    <div class="slider"></div>
+    <div class="slider" style="float:left;"></div>
+    <p>&nbsp;&nbsp;&nbsp;&nbsp;Usage: use slider bar to select a date; use scroll wheel to zoom in and out; hover over a county to display time series.</p>
     <script>
       function showCity() {
         d3.select("#cities")
@@ -122,8 +133,8 @@
         .style("opacity", 0);
       }
     </script>
-    <button type="button" onclick="showCity()">Show Cities</button>
-    <button type="button" onclick="hideCity()">Hide Cities</button>
+    <button type="button" style="font-size: 15px;" onclick="showCity()">Show Cities</button>
+    <button type="button" style="font-size: 15px;" onclick="hideCity()">Hide Cities</button>
     <div id="plot"></div>
     <p>Source: <a href="https://github.com/nytimes/covid-19-data">
         Coronavirus (Covid-19) Data in the United States</a> published by New York Times</p>

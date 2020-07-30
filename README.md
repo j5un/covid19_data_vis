@@ -1,6 +1,9 @@
 # covid19_data_vis
 
 ## This is a visualization of covid-19 data in the U.S.
+Link to the github page that hosts [**this visualization**](https://j5un.github.io/covid19_data_vis/).
+
+This narrative visualization uses the interactive slideshow structure with single-frame interactivity.
 
 ### References and Data Source
 - The choropleth plot implementation is inspired by [Mike Bostock's choropleth map of unemployment rate by county in August 2016](https://observablehq.com/@d3/choropleth) and [Duy Nguyen's version](https://bl.ocks.org/duynguyen158/b96fa12ed5590b8435af799728e00a96).
@@ -8,3 +11,5 @@
 - The zoom and scatter plot implementations are inspired by [Yan Holtz's D3.js Graph Gallery](https://www.d3-graph-gallery.com/index.html). 
 - The TopoJSON file of U.S. counties is obtained from [Mike Bostock's pre-built TopoJSON from the U.S. Census Bureau](https://github.com/topojson/us-atlas). 
 - The Covid-19 cumulative data are published by the New York Times on [github](https://github.com/nytimes/covid-19-data).
+- The Covid-19 timeline is published by [USA TODAY](https://www.usatoday.com/in-depth/news/nation/2020/04/21/coronavirus-updates-how-covid-19-unfolded-u-s-timeline/2990956001/).
+- [Paper by Segel & Heer on Narrative Visualization](http://vis.stanford.edu/files/2010-Narrative-InfoVis.pdf).

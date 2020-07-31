@@ -1,7 +1,7 @@
 # covid19_data_vis
 
 ## This is a visualization of covid-19 data in the U.S.
-The website of this visualization is hosted on [**github pages**](https://j5un.github.io/covid19_data_vis/).
+The website of this visualization is hosted on [**GitHub Pages**](https://j5un.github.io/covid19_data_vis/).
 
 This narrative visualization uses the interactive slideshow structure with single-frame interactivity.
 
@@ -10,6 +10,6 @@ This narrative visualization uses the interactive slideshow structure with singl
 - The tooltip and slidebar implementation is inspired by [Doug Dowson's choropleth map of U.S. Daily Cigarette Smoking Rate from 1996 to 2012](http://bl.ocks.org/dougdowson/9832019).
 - The zoom and scatter plot implementations are inspired by [Yan Holtz's D3.js Graph Gallery](https://www.d3-graph-gallery.com/index.html). 
 - The TopoJSON file of U.S. counties is obtained from [Mike Bostock's pre-built TopoJSON from the U.S. Census Bureau](https://github.com/topojson/us-atlas). 
-- The Covid-19 cumulative data are published by the New York Times on [github](https://github.com/nytimes/covid-19-data).
+- The Covid-19 cumulative data are published by the New York Times on [GitHub](https://github.com/nytimes/covid-19-data).
 - The Covid-19 timeline is published by [USA TODAY](https://www.usatoday.com/in-depth/news/nation/2020/04/21/coronavirus-updates-how-covid-19-unfolded-u-s-timeline/2990956001/).
 - [Paper by Segel & Heer on Narrative Visualization](http://vis.stanford.edu/files/2010-Narrative-InfoVis.pdf).

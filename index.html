@@ -115,15 +115,18 @@
   <div id="content">
     <h1>Visualizing the COVID-19 Outbreak in the U.S.</h1>
     <p>The coronavirus outbreak started in the U.S. in late February/early March, 2020. This web page is a visualization
-      of the evolutoin of the pandemic in the U.S. from the beginning of March, 2020. Total number of cases are shown by 
-      counties on the map. Additional details can be revealed by hovering your pointer over the map. Major U.S. cities and 
+      of the evolutoin of the pandemic in the U.S. from the beginning of March, 2020. Total number of cases are shown by
+      counties on the map. Additional details can be revealed by hovering your pointer over the map. Major U.S. cities
+      and
       COVID-19 timeline are also annotated on the map. These annotations can be toggled on or off.
       <br><br>Several questions can be answered by the interactive visualization:
       <li>By moving the slider from the beginning to the end, it shows that the pandemic first hit major cities on
         the coasts (both west and east), then major inland cities, and finally less populated area in between.</li>
-      <li>By zooming in and hovering over counties to inspect time series in detail, it can be observed that some cities have 
+      <li>By zooming in and hovering over counties to inspect time series in detail, it can be observed that some cities
+        have
         succesfully flattened the curve while others haven't.</li>
-      <li>By toggling on the marks of the major cities, a strong correlation between case number and population can be observed.</li>
+      <li>By toggling on the marks of the major cities, a strong correlation between case number and population can be
+        observed.</li>
     </p>
 
     <div style="width: 100%; overflow: hidden;">
@@ -131,33 +134,17 @@
         <h2 class="week"></h2>
       </div>
       <div style="margin-left:230px;">
-        <p style="color: steelblue; font-size: 1.2em;">Use slider bar to select a date; use scroll wheel or double-click to zoom in; hover over a county to show details.</p>
+        <p style="color: steelblue; font-size: 1.2em;">Use slider bar to select a date; use scroll wheel or double-click
+          to zoom in; hover over a county to show details.</p>
       </div>
     </div>
     <div class="slider" style="margin: 10px 0px 15px 0px;"></div>
 
-    <script>
-      function showCity() {
-        d3.select("#cities")
-          .style("opacity", 1);
-      }
-      function hideCity() {
-        d3.select("#cities")
-          .style("opacity", 0);
-      }
-      function showNote() {
-        d3.select("#annotation")
-          .style("opacity", 1);
-      }
-      function hideNote() {
-        d3.select("#annotation")
-          .style("opacity", 0);
-      }
-    </script>
-    <button type="button" style="font-size: 15px;" onclick="showCity()">Show Cities</button>
-    <button type="button" style="font-size: 15px;" onclick="hideCity()">Hide Cities</button>
-    <button type="button" style="font-size: 15px;" onclick="showNote()">Show Annotations</button>
-    <button type="button" style="font-size: 15px;" onclick="hideNote()">Hide Annotations</button>
+    <button type="button" style="font-size: 15px;" id="showCity">Show Cities</button>
+    <button type="button" style="font-size: 15px;" id="hideCity">Hide Cities</button>
+    <button type="button" style="font-size: 15px;" id="showNote">Show Annotations</button>
+    <button type="button" style="font-size: 15px;" id="hideNote">Hide Annotations</button>
+    <button type="button" style="font-size: 15px;" id="resetZoom">Reset Zoom</button>
     <div id="plot"></div>
     <p>Source: <a href="https://github.com/nytimes/covid-19-data">
         Coronavirus (COVID-19) Data in the United States</a> published by New York Times</p>
@@ -165,17 +152,19 @@
 
   <!-- java script section -->
   <script>
+    var zoom = d3.zoom().on("zoom", function () {
+            svg.attr("transform", d3.event.transform)
+          });
+
     var svg = d3
       .select("#plot")
       .append("svg")
       .attr("id", "baselayer")
       .attr("width", 1200)
       .attr("height", 640)
-      .call(d3.zoom().on("zoom", function () {
-        svg.attr("transform", d3.event.transform)
-      }))
       .append("g")
-      .attr("id", "zoom");
+      .attr("id", "zoom")
+      .call(zoom);
 
     var path = d3.geoPath();
 
@@ -343,7 +332,7 @@
       cities.append("text")
         .attr("dx", 5)
         .attr("dy", 15)
-        .text(d => d.NAME)
+        .text(function (d) { return d.NAME; })
         .style("font-size", 15)
         .style("fill", "rgb(64,64,64)");
 
@@ -549,56 +538,85 @@
               .lower();
           });
 
-          switch (true) {
-            case week <= 9:
-              annotation.selectAll("g").remove();
-              annotate("Seattle", "On Jan 21, first COVID-19 case confirmed by CDC");
-              annotate("San Francisco", "On Feb 6, first death in U.S. related to COVID-19");
-              break;
-            case week > 9 && week <= 10:
-              annotation.selectAll("g").remove();
-              annotate("U.S.", "On Mar 11, more than 1K confirmed cases in the U.S.");
-              break;
-            case week > 10 && week <= 11:
-              annotation.selectAll("g").remove();
-              annotate("San Francisco", "On Mar 16, nation's first shelter in place warning issued");
-              annotate("U.S.", "On Mar 19, more than 10K confirmed cases in the U.S.");
-              break;
-            case week > 11 && week <= 12:
-              annotation.selectAll("g").remove();
-              annotate("New York", "On Mar 22, NYS on PAUSE order issued");
-              annotate("U.S.", "On Mar 26, U.S. has the world's most confirmed cases");
-              break;
-            case week > 12 && week <= 14:
-              annotation.selectAll("g").remove();
-              annotate("U.S.", "On Apr 1, more than 200K confirmed cases in the U.S.");
-              break;
-            case week > 14 && week <= 16:
-              annotation.selectAll("g").remove();
-              annotate("U.S.", "On Apr 14, all 50 states report deaths");
-              break;
-            case week > 16 && week <= 20:
-              annotation.selectAll("g").remove();
-              annotate("U.S.", "On Apr 28, more than 1M confirmed cases in the U.S.");
-              break;
-            case week > 20 && week <= 22:
-              annotation.selectAll("g").remove();
-              annotate("U.S.", "On May 27, more than 100k deaths in the U.S.");
-              break;
-            case week > 22 && week <= 26:
-              annotation.selectAll("g").remove();
-              annotate("U.S.", "On Jun 11, more than 2M confirmed cases in the U.S.");
-              break;
-            case week > 26 && week <= 28:
-              annotation.selectAll("g").remove();
-              annotate("U.S.", "On Jul 8, more than 3M confirmed cases in the U.S.");
-              break;
-            case week > 28 && week <= 30:
-              annotation.selectAll("g").remove();
-              annotate("U.S.", "On Jul 24, more than 4M confirmed cases in the U.S.");
-              break;
-          }
+        switch (true) {
+          case week <= 9:
+            annotation.selectAll("g").remove();
+            annotate("Seattle", "On Jan 21, first COVID-19 case confirmed by CDC");
+            annotate("San Francisco", "On Feb 6, first death in U.S. related to COVID-19");
+            break;
+          case week > 9 && week <= 10:
+            annotation.selectAll("g").remove();
+            annotate("U.S.", "On Mar 11, more than 1K confirmed cases in the U.S.");
+            break;
+          case week > 10 && week <= 11:
+            annotation.selectAll("g").remove();
+            annotate("San Francisco", "On Mar 16, nation's first shelter in place warning issued");
+            annotate("U.S.", "On Mar 19, more than 10K confirmed cases in the U.S.");
+            break;
+          case week > 11 && week <= 12:
+            annotation.selectAll("g").remove();
+            annotate("New York", "On Mar 22, NYS on PAUSE order issued");
+            annotate("U.S.", "On Mar 26, U.S. has the world's most confirmed cases");
+            break;
+          case week > 12 && week <= 14:
+            annotation.selectAll("g").remove();
+            annotate("U.S.", "On Apr 1, more than 200K confirmed cases in the U.S.");
+            break;
+          case week > 14 && week <= 16:
+            annotation.selectAll("g").remove();
+            annotate("U.S.", "On Apr 14, all 50 states report deaths");
+            break;
+          case week > 16 && week <= 20:
+            annotation.selectAll("g").remove();
+            annotate("U.S.", "On Apr 28, more than 1M confirmed cases in the U.S.");
+            break;
+          case week > 20 && week <= 22:
+            annotation.selectAll("g").remove();
+            annotate("U.S.", "On May 27, more than 100k deaths in the U.S.");
+            break;
+          case week > 22 && week <= 26:
+            annotation.selectAll("g").remove();
+            annotate("U.S.", "On Jun 11, more than 2M confirmed cases in the U.S.");
+            break;
+          case week > 26 && week <= 28:
+            annotation.selectAll("g").remove();
+            annotate("U.S.", "On Jul 8, more than 3M confirmed cases in the U.S.");
+            break;
+          case week > 28 && week <= 30:
+            annotation.selectAll("g").remove();
+            annotate("U.S.", "On Jul 24, more than 4M confirmed cases in the U.S.");
+            break;
+        }
       }
+
+      // Set button behavior
+      d3.select("#showCity")
+        .on("click", function () {
+          d3.select("#cities")
+            .style("opacity", 1);
+        });
+      d3.select("#hideCity")
+        .on("click", function () {
+          d3.select("#cities")
+            .style("opacity", 0);
+        });
+      d3.select("#showNote")
+        .on("click", function () {
+          d3.select("#annotation")
+            .style("opacity", 1);
+        });
+      d3.select("#hideNote")
+        .on("click", function () {
+          d3.select("#annotation")
+            .style("opacity", 0);
+        });
+      d3.select("#resetZoom")
+        .on("click", function () {
+          svg
+            .transition()
+            .duration(500)
+            .call(zoom.transform, d3.zoomIdentity);
+        });
 
       var slider = d3.select(".slider")
         .append("input")

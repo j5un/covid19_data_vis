@@ -1,7 +1,7 @@
 # covid19_data_vis
 
 ## This is a visualization of covid-19 data in the U.S.
-Link to the github page that hosts [**this visualization**](https://j5un.github.io/covid19_data_vis/).
+The website of this visualization is hosted on [**github pages**](https://j5un.github.io/covid19_data_vis/).
 
 This narrative visualization uses the interactive slideshow structure with single-frame interactivity.
 

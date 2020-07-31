@@ -119,14 +119,14 @@
       counties on the map. Additional details can be revealed by hovering your pointer over the map. Major U.S. cities
       and
       COVID-19 timeline are also annotated on the map. These annotations can be toggled on or off.
-      <br><br>Several questions can be answered by the interactive visualization:
+      <br><br>Several observations can be made by the interactive visualization. For example:
       <li>By moving the slider from the beginning to the end, it shows that the pandemic first hit major cities on
-        the coasts (both west and east), then major inland cities, and finally less populated area in between.</li>
+        the coasts (both west and east), then major cities inland, and finally less populated area in between.</li>
       <li>By zooming in and hovering over counties to inspect time series in detail, it can be observed that some cities
-        have
-        succesfully flattened the curve while others haven't.</li>
-      <li>By toggling on the marks of the major cities, a strong correlation between case number and population can be
-        observed.</li>
+        have succesfully flattened the curve (e.g. New York City) while others haven't.</li>
+      <li>By toggling on the marks of the major cities, it shows a strong correlation between case numbers and population.</li>
+
+      <br>You are encouraged to explore the map and come up with your own observations about the pandemic.
     </p>
 
     <div style="width: 100%; overflow: hidden;">
@@ -560,6 +560,8 @@
             break;
           case week > 12 && week <= 14:
             annotation.selectAll("g").remove();
+            annotate("Miami", "On Apr 1, Florida issued stay-at-home order");
+            annotate("New York", "In April, NYS became the new epicenter");
             annotate("U.S.", "On Apr 1, more than 200K confirmed cases in the U.S.");
             break;
           case week > 14 && week <= 16:
@@ -585,6 +587,8 @@
           case week > 28 && week <= 30:
             annotation.selectAll("g").remove();
             annotate("U.S.", "On Jul 24, more than 4M confirmed cases in the U.S.");
+            annotate("San Francisco", "On Jul 23, CA surpassed NY to become #1");
+            annotate("Miami", "On Jul 25, FL surpassed NY to become #2");
             break;
         }
       }

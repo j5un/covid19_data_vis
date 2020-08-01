@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<meta charset="UTF-8" />
+
+<html>
+
+<head>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <script src="https://d3js.org/topojson.v3.min.js"></script>
+
+  <title>COVID-19 Cases in the U.S.</title>
+  <style>
+    body,
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+      padding: 0;
+      font-family: 'Source Sans Pro', sans-serif;
+      font-size: 1em;
+      color: #333;
+      font-weight: 400;
+    }
+
+    #content {
+      margin: 5px;
+      padding: 20px;
+      width: 1200px;
+      border: 1px solid #ccc;
+    }
+
+    #plot {
+      margin: 15px 0px 0px 0px;
+    }
+
+    #map {
+      margin: 10px 0px 0px 0px;
+      padding: 0px;
+    }
+
+    h1,
+    h2 {
+      line-height: 1em;
+      font-size: 1.75em;
+      font-weight: 900;
+      color: #000;
+    }
+
+    h2.week {
+      margin: 10px 0px 0px 0px;
+      font-size: 1.2em;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 10px 0px 0px 0px;
+    }
+
+    .county {
+      fill: #fff;
+      stroke: "none";
+    }
+
+    .scatter {
+      margin: 10px 30px 30px 60px width=370px,
+        height=360px;
+    }
+
+    input {
+      display: block;
+      width: 200px;
+      margin: 10px 0px 0px 0px;
+    }
+
+    #legend text {
+      font-size: 0.9em;
+      color: #333;
+      font-weight: 400;
+    }
+
+    .tooltip {
+      position: absolute;
+      padding: 7px;
+      font-size: 0.9em;
+      pointer-events: none;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+
+      -moz-box-shadow: 3px 3px 10px 0px rgba(0, 0, 0, 0.25);
+      -webkit-box-shadow: 3px 3px 10px 0px rgba(0, 0, 0, 0.25);
+      box-shadow: 3px 3px 10px 0px rgba(0, 0, 0, 0.25);
+    }
+
+    .tooltip p {
+      margin: 0;
+      padding: 0;
+    }
+
+    .tooltip table {
+      margin: 0;
+      padding: 0;
+      border-collapse: collapse;
+    }
+
+    .wide {
+      width: 200px;
+    }
+
+    .buttonA {
+      background-color: Green;
+      border: none;
+      color: white;
+      padding: 12px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      margin: 2px 6px;
+      cursor: pointer;
+      font-size: 20px;
+      width: 200px;
+    }
+  </style>
+
+</head>
+
+<body>
+
+  <div id="content">
+    <h1>Visualizing the COVID-19 Outbreak in the U.S.</h1>
+    <p>
+      Need a scatter plot here!
+    </p>
+    <div id="plot"></div>
+    <div style="width: 100%; overflow: hidden;">
+      <div style="float: left;">
+        <button onclick="document.location='index.html'" class="buttonA">Previous</button>
+      </div>
+      <div style="margin-left:985px;">
+        <button onclick="document.location='index3.html'" class="buttonA">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var parseDate = d3.timeParse("%Y-%m-%d");
+    var formatDate = d3.timeFormat("%b %d, %Y");
+    d3.csv("us-total-covid19-daily.csv").then(function (data) {
+      // Set up time series
+      var allGroup = ["deaths", "cases"];
+      var dataByDay = allGroup.map(function (grpName) { // .map allows to do something for each element of the list
+        return {
+          name: grpName,
+          values: data.map(function (d) {
+            return { time: parseDate(d.date), value: +d[grpName] };
+          })
+        };
+      });
+      console.log(JSON.stringify(dataByDay));
+
+      // Color scheme
+      let myColor = d3.scaleOrdinal()
+        .domain(allGroup)
+        .range(d3.schemeSet2);
+
+      // Set up plotting area
+      let margin = { top: 20, right: 60, bottom: 30, left: 40 },
+        width = 1200 - margin.left - margin.right,
+        height = 640 - margin.top - margin.bottom;
+
+      var svg = d3
+        .select("#plot")
+        .append("svg")
+        .attr("width", 1200)
+        .attr("height", 640)
+        .append("g")
+        .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+      // Add X axis
+      let x = d3.scaleTime()
+        .domain(d3.extent(dataByDay[1].values, function (d) { return d.time; }))
+        .range([0, width]);
+      svg.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x).ticks(d3.timeSunday.every(4)));
+      // Add Y axis
+      let y = d3.scalePow()
+        .exponent(0.5)
+        .domain([0, d3.max(dataByDay[1].values, function (d) { return d.value; })])
+        .range([height, 0]);
+      svg.append("g")
+        .call(d3.axisLeft(y).ticks(6));
+
+      // Add the lines
+      let line = d3.line().curve(d3.curveBasis)
+        .x(function (d) { return x(+d.time) })
+        .y(function (d) { return y(+d.value) })
+      svg.selectAll("myLines")
+        .data(dataByDay)
+        .enter()
+        .append("path")
+        .attr("d", function (d) { return line(d.values) })
+        .style("stroke", function (d) { return myColor(d.name) })
+        .style("stroke-width", 4)
+        .style("fill", "none")
+
+      // Add the points
+      svg.selectAll("myDots") // First we need to enter in a group
+        .data(dataByDay)
+        .enter()
+        .append("g")
+        .style("fill", function (d) { return myColor(d.name) })
+        .selectAll("myPoints") // Second we need to enter in the 'values' part of this group
+        .data(function (d) { return d.values })
+        .enter()
+        .append("circle")
+        .attr("cx", function (d) { return x(d.time) })
+        .attr("cy", function (d) { return y(d.value) })
+        .attr("r", 5)
+        .style("stroke", "white")
+
+      // Add a legend at the end of each line
+      svg.selectAll("myLabels")
+        .data(dataByDay)
+        .enter()
+        .append("g")
+        .append("text")
+        .datum(function (d) { return { name: d.name, value: d.values[d.values.length - 1] }; }) // keep only the last value of each time series
+        .attr("transform", function (d) { return "translate(" + x(d.value.time) + "," + y(d.value.value) + ")"; }) // Put the text at the position of the last point
+        .attr("x", 12) // shift the text a bit more right
+        .text(function (d) { return d.name; })
+        .style("fill", function (d) { return myColor(d.name) })
+        .style("font-size", 15)
+    });
+  </script>
+</body>
+
+</html>

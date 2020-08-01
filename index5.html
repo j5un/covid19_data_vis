@@ -124,20 +124,34 @@
   <div id="content">
     <h1>Visualizing the COVID-19 Outbreak in the U.S.</h1>
     <p style="color: steelblue; font-size: 1.2em;">
-      Below is a choropleth map of the total confirmed cases in the U.S on a county level. 
-      By March 22, 2020, local outbreaks were mostly happening in a few major cities along the west and east coast.
-      Hover over a county to see details.
+      Please take control now and explore the map on your own.
+      Use the slider bar to select a date (on a weekly interval). Zooming-in and out are enabled by mouse's scroll wheel
+      (or double-click).
+      Hover over a county to show details and case curves.
     </p>
+    <!-- <div style="width: 100%; overflow: hidden;">
+      <div style="float: left;">
+      </div>
+      <div style="margin-left:230px;">
+      </div>
+    </div> -->
     <h2 class="week"></h2>
+    <div class="slider" style="margin: 10px 0px 15px 0px;"></div>
+
+    <button type="button" style="font-size: 15px;" id="showCity">Show Cities</button>
+    <button type="button" style="font-size: 15px;" id="hideCity">Hide Cities</button>
+    <button type="button" style="font-size: 15px;" id="showNote">Show Annotations</button>
+    <button type="button" style="font-size: 15px;" id="hideNote">Hide Annotations</button>
+    <button type="button" style="font-size: 15px;" id="resetZoom">Reset Zoom</button>
     <div id="plot"></div>
     <p style="margin-bottom: 10px;">Source: <a href="https://github.com/nytimes/covid-19-data">
         Coronavirus (COVID-19) Data in the United States</a> published by New York Times</p>
     <div style="width: 100%; overflow: hidden;">
       <div style="float: left;">
-        <button onclick="document.location='index2.html'" class="buttonA">Previous</button>
+        <button onclick="document.location='index4.html'" class="buttonA">Previous</button>
       </div>
       <div style="margin-left:985px;">
-        <button onclick="document.location='index4.html'" class="buttonA">Next</button>
+        <button onclick="document.location='index.html'" class="buttonA">Next</button>
       </div>
     </div>
   </div>
@@ -154,7 +168,9 @@
       .attr("id", "baselayer")
       .attr("width", 1200)
       .attr("height", 640)
-      .append("g");
+      .append("g")
+      .attr("id", "zoom")
+      .call(zoom);
 
     var path = d3.geoPath();
 
@@ -377,7 +393,7 @@
             .attr("id", "us")
             .append("text")
             .attr("dx", 265)
-            .attr("dy", 15)
+            .attr("dy", 25)
             .text(info)
             .style("font-size", 17)
             .style("fill", "black");
@@ -385,7 +401,7 @@
       }
 
       function update(week) {
-        // slider.property("value", week);
+        slider.property("value", week);
         d3.select(".week").text("Date: " + formatDate(timeScale.invert((week - 10) * 7)));
 
         let data = d3.map();
@@ -412,6 +428,7 @@
                   <tr><td class='wide'>Death rate:</td><td>${d3.format(".1%")(+data.get(d.id).deaths / +data.get(d.id).cases)}</td></tr>
                 </tbody>
               </table>
+              <div id="my-scatter"></div>
               ` :
               `
               <p><strong>${d.properties.name}, ${states.get(d.id.slice(0, 2)).name}</strong></p>
@@ -424,6 +441,94 @@
               .style("left", (d3.event.pageX + 15) + "px")
               .style("top", (d3.event.pageY - 28) + "px");
 
+            // add scatter plot
+            if (dataByCounty.has(d.id)) {
+
+              // Set up time series
+              let allGroup = ["deaths", "cases"];
+              let data_county = allGroup.map(function (grpName) { // .map allows to do something for each element of the list
+                return {
+                  name: grpName,
+                  values: dataByCounty.get(d.id).map(function (e) {
+                    return { time: parseDate(e.date), value: +e[grpName] };
+                  })
+                };
+              });
+
+              // Color scheme
+              let myColor = d3.scaleOrdinal()
+                .domain(allGroup)
+                .range(d3.schemeSet2);
+
+              // Set up plotting area
+              let margin = { top: 20, right: 60, bottom: 30, left: 40 },
+                width = 300 - margin.left - margin.right,
+                height = 200 - margin.top - margin.bottom;
+
+              let svg_county = tooltip.select("#my-scatter")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform",
+                  "translate(" + margin.left + "," + margin.top + ")");
+
+              // Add X axis
+              let x = d3.scaleTime()
+                .domain(d3.extent(data_county[1].values, function (d) { return d.time; }))
+                .range([0, width]);
+              svg_county.append("g")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(x).ticks(d3.timeSunday.every(4)));
+              // Add Y axis
+              let y = d3.scaleLinear()
+                // .exponent(0.5)
+                .domain([0, d3.max(data_county[1].values, function (d) { return d.value; })])
+                .range([height, 0]);
+              svg_county.append("g")
+                .call(d3.axisLeft(y).ticks(6));
+
+              // Add the lines
+              let line = d3.line().curve(d3.curveBasis)
+                .x(function (d) { return x(+d.time) })
+                .y(function (d) { return y(+d.value) })
+              svg_county.selectAll("myLines")
+                .data(data_county)
+                .enter()
+                .append("path")
+                .attr("d", function (d) { return line(d.values) })
+                .style("stroke", function (d) { return myColor(d.name) })
+                .style("stroke-width", 4)
+                .style("fill", "none")
+
+              // Add the points
+              svg_county.selectAll("myDots") // First we need to enter in a group
+                .data(data_county)
+                .enter()
+                .append("g")
+                .style("fill", function (d) { return myColor(d.name) })
+                .selectAll("myPoints") // Second we need to enter in the 'values' part of this group
+                .data(function (d) { return d.values })
+                .enter()
+                .append("circle")
+                .attr("cx", function (d) { return x(d.time) })
+                .attr("cy", function (d) { return y(d.value) })
+                .attr("r", 5)
+                .style("stroke", "white")
+
+              // Add a legend at the end of each line
+              svg_county.selectAll("myLabels")
+                .data(data_county)
+                .enter()
+                .append("g")
+                .append("text")
+                .datum(function (d) { return { name: d.name, value: d.values[d.values.length - 1] }; }) // keep only the last value of each time series
+                .attr("transform", function (d) { return "translate(" + x(d.value.time) + "," + y(d.value.value) + ")"; }) // Put the text at the position of the last point
+                .attr("x", 12) // shift the text a bit more right
+                .text(function (d) { return d.name; })
+                .style("fill", function (d) { return myColor(d.name) })
+                .style("font-size", 15)
+            }
             // Highlight selected county
             d3.select(this)
               .style("stroke", "black")
@@ -438,15 +543,104 @@
               .lower();
           });
 
-        annotate("U.S.", "Mar 19: more than 10K confirmed cases in the U.S.");
-        annotate("Seattle", "Jan 21: first COVID-19 case confirmed by CDC");
-        annotate("San Francisco", "Mar 16: nation's first shelter in place warning issued");
-        annotate("New York", "Mar 22: NYC declared US outbreak epicenter");
-
+        switch (true) {
+          case week <= 9:
+            annotation.selectAll("g").remove();
+            annotate("Seattle", "Jan 21: 1st COVID-19 case confirmed by CDC");
+            annotate("San Francisco", "Feb 6: 1st death in U.S. related to COVID-19");
+            break;
+          case week > 9 && week <= 10:
+            annotation.selectAll("g").remove();
+            annotate("U.S.", "Mar 11: more than 1K confirmed cases in the U.S.");
+            break;
+          case week > 10 && week <= 11:
+            annotation.selectAll("g").remove();
+            annotate("San Francisco", "Mar 16: nation's first shelter in place warning issued");
+            annotate("U.S.", "Mar 19: more than 10K confirmed cases in the U.S.");
+            break;
+          case week > 11 && week <= 12:
+            annotation.selectAll("g").remove();
+            annotate("New York", "Mar 22: NYS on PAUSE order issued");
+            annotate("U.S.", "Mar 26: U.S. has the world's most confirmed cases");
+            break;
+          case week > 12 && week <= 14:
+            annotation.selectAll("g").remove();
+            annotate("Miami", "Apr 1: Florida issued stay-at-home order");
+            annotate("New York", "In April, NYS became the new epicenter");
+            annotate("U.S.", "Apr 1: more than 200K confirmed cases in the U.S.");
+            break;
+          case week > 14 && week <= 16:
+            annotation.selectAll("g").remove();
+            annotate("U.S.", "Apr 14: all 50 states report deaths");
+            break;
+          case week > 16 && week <= 20:
+            annotation.selectAll("g").remove();
+            annotate("U.S.", "Apr 28: more than 1M confirmed cases in the U.S.");
+            break;
+          case week > 20 && week <= 22:
+            annotation.selectAll("g").remove();
+            annotate("U.S.", "May 27: more than 100k deaths in the U.S.");
+            break;
+          case week > 22 && week <= 26:
+            annotation.selectAll("g").remove();
+            annotate("U.S.", "Jun 11: more than 2M confirmed cases in the U.S.");
+            break;
+          case week > 26 && week <= 28:
+            annotation.selectAll("g").remove();
+            annotate("U.S.", "Jul 8: more than 3M confirmed cases in the U.S.");
+            break;
+          case week > 28 && week <= 30:
+            annotation.selectAll("g").remove();
+            annotate("U.S.", "Jul 24: more than 4M confirmed cases in the U.S.");
+            annotate("San Francisco", "Jul 23: CA surpassed NY to become #1");
+            annotate("Miami", "Jul 25: FL surpassed NY to become #2");
+            annotate("Dallas", "Jul 30: TX surpassed NY to become #3")
+            break;
+        }
       }
 
+      // Set button behavior
+      d3.select("#showCity")
+        .on("click", function () {
+          d3.select("#cities")
+            .style("opacity", 1);
+        });
+      d3.select("#hideCity")
+        .on("click", function () {
+          d3.select("#cities")
+            .style("opacity", 0);
+        });
+      d3.select("#showNote")
+        .on("click", function () {
+          d3.select("#annotation")
+            .style("opacity", 1);
+        });
+      d3.select("#hideNote")
+        .on("click", function () {
+          d3.select("#annotation")
+            .style("opacity", 0);
+        });
+      d3.select("#resetZoom")
+        .on("click", function () {
+          svg
+            .transition()
+            .duration(500)
+            .call(zoom.transform, d3.zoomIdentity);
+        });
+
+      var slider = d3.select(".slider")
+        .append("input")
+        .attr("type", "range")
+        .attr("min", 9)
+        .attr("max", 30)
+        .attr("step", 1)
+        .on("input", function () {
+          var week = this.value;
+          update(week);
+        });
+
       // Set the initial date to March 1, 2020
-      update(12);
+      update(30);
     }
     );
 

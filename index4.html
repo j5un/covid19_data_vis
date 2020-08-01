@@ -124,8 +124,8 @@
   <div id="content">
     <h1>Visualizing the COVID-19 Outbreak in the U.S.</h1>
     <p style="color: steelblue; font-size: 1.2em;">
-      Below is a choropleth map of the total confirmed cases in the U.S on a county level. 
-      By March 22, 2020, local outbreaks were mostly happening in a few major cities along the west and east coast.
+      By July 26, the pandemic has spread across the entire US with new epicenters emerging. New York State
+      seems to be flattening the curve while cases in a few other densely-populated states are rapidly growing.
       Hover over a county to see details.
     </p>
     <h2 class="week"></h2>
@@ -134,10 +134,10 @@
         Coronavirus (COVID-19) Data in the United States</a> published by New York Times</p>
     <div style="width: 100%; overflow: hidden;">
       <div style="float: left;">
-        <button onclick="document.location='index2.html'" class="buttonA">Previous</button>
+        <button onclick="document.location='index3.html'" class="buttonA">Previous</button>
       </div>
       <div style="margin-left:985px;">
-        <button onclick="document.location='index4.html'" class="buttonA">Next</button>
+        <button onclick="document.location='index5.html'" class="buttonA">Next</button>
       </div>
     </div>
   </div>
@@ -377,7 +377,7 @@
             .attr("id", "us")
             .append("text")
             .attr("dx", 265)
-            .attr("dy", 15)
+            .attr("dy", 25)
             .text(info)
             .style("font-size", 17)
             .style("fill", "black");
@@ -438,15 +438,15 @@
               .lower();
           });
 
-        annotate("U.S.", "Mar 19: more than 10K confirmed cases in the U.S.");
-        annotate("Seattle", "Jan 21: first COVID-19 case confirmed by CDC");
-        annotate("San Francisco", "Mar 16: nation's first shelter in place warning issued");
-        annotate("New York", "Mar 22: NYC declared US outbreak epicenter");
+        annotate("U.S.", "Jul 24: more than 4M confirmed cases in the U.S.");
+        annotate("Los Angeles", "Jul 23: CA surpassed NY to become #1");
+        annotate("Miami", "Jul 25: FL surpassed NY to become #2");
+        annotate("Dallas", "Jul 30: TX surpassed NY to become #3")
 
       }
 
       // Set the initial date to March 1, 2020
-      update(12);
+      update(30);
     }
     );
 

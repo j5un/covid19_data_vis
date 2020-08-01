@@ -18,7 +18,7 @@
       padding: 0;
       font-family: 'Source Sans Pro', sans-serif;
       font-size: 1em;
-      color: #333;
+      color: 'black';
       font-weight: 400;
     }
 
@@ -41,7 +41,7 @@
     h1,
     h2 {
       line-height: 1em;
-      font-size: 1.75em;
+      font-size: 2em;
       font-weight: 900;
       color: #000;
     }
@@ -54,16 +54,16 @@
 
     p {
       margin: 10px 0px 0px 0px;
+      font-size: 1.5em;
+    }
+
+    li {
+      font-size: 25px;
     }
 
     .county {
       fill: #fff;
       stroke: "none";
-    }
-
-    .scatter {
-      margin: 10px 30px 30px 60px width=370px,
-        height=360px;
     }
 
     input {
@@ -128,21 +128,26 @@
 
   <div id="content">
     <h1>Visualizing the COVID-19 Outbreak in the U.S.</h1>
-    <p style="font-size: 25px;">
-      The coronavirus outbreak started in the U.S. in late February/early March, 2020. This
-      web page is a visualization
-      of the evolutoin of the pandemic in the U.S. from the beginning of March, 2020. Total number of cases are shown by
-      counties on the map. Additional details can be revealed by hovering your pointer over the map. Major U.S. cities
-      and COVID-19 timeline are also annotated on the map. These annotations can be toggled on or off.
+    <p>
+      The coronavirus outbreak started in the U.S. in late February/early March, 2020. Here I present a visualization of
+      the evolutoin of the COVID-19 pandemic in the U.S. The COVID-19 data is released by New York Time on GitHub, and
+      contains
+      cumulative data of both confirmed cases and deaths in the US. The second page presents the growth curve of the total
+      COVID-19 cases
+      in the US by time, while the third page contains an interactive choropleth map of detailed COVID-19 data by
+      county. Additional
+      details can be revealed by hovering your pointer over the map. Major U.S. cities and COVID-19 timeline are also
+      annotated on both
+      the line chart and the choropleth map.
     </p>
-    <p style="font-size: 25px;">Several observations can be made by the interactive visualization. For example:</p>
-    <li style="font-size: 25px;">By moving the slider from the beginning to the end, it shows that the pandemic first
-      hit major cities on the coasts (both west and east), then major cities inland, and finally less populated area in between.</li>
-    <li style="font-size: 25px;">By zooming in and hovering over counties to inspect time series in detail, it can be
-      observed that some cities have succesfully flattened the curve (e.g. New York City) while others haven't.</li>
-    <li style="font-size: 25px;">By toggling on the marks of the major cities, it shows a strong correlation between
-      case numbers and population.</li>
-    <p style="font-size: 25px;">You are encouraged to explore the map and come up with your own observations about the pandemic.</p>
+    <p>Some observations can be readily made from the interactive visualization. For example:</p>
+    <li>While the total number of cases in the US seems to be accelerating, there is a lot variation among states. Some
+      states that had early
+      outbreaks seems to be flattening the curve (e.g. NY), which other states are seeing rapid growth rate.</li>
+    <li>By moving the slider bar from the beginning to the end on the choropleth map, it shows that the pandemic first
+      hit major cities on the coasts (both west and east), then major cities inland, and finally less populated area in
+      between.</li>
+    <p>You are encouraged to explore the map and come up with your own observations about the pandemic. Please click "Next" to continue.</p>
     <br>
     <div style="width: 100%; overflow: hidden;">
       <div style="float: left;">

@@ -41,7 +41,7 @@
     h1,
     h2 {
       line-height: 1em;
-      font-size: 1.75em;
+      font-size: 2em;
       font-weight: 900;
       color: #000;
     }
@@ -59,11 +59,6 @@
     .county {
       fill: #fff;
       stroke: "none";
-    }
-
-    .scatter {
-      margin: 10px 30px 30px 60px width=370px,
-        height=360px;
     }
 
     input {
@@ -128,15 +123,18 @@
 
   <div id="content">
     <h1>Visualizing the COVID-19 Outbreak in the U.S.</h1>
-    <div style="width: 100%; overflow: hidden;">
+    <p style="color: steelblue; font-size: 1.2em;">
+      Below is a choropleth map of the total confirmed cases in the US on a county level. 
+      Use the slider bar to select a date (on a weekly interval). Zooming-in and out are enabled by mouse's scroll wheel (or double-click). 
+      Hover over a county to show details.
+    </p>
+    <!-- <div style="width: 100%; overflow: hidden;">
       <div style="float: left;">
-        <h2 class="week"></h2>
       </div>
       <div style="margin-left:230px;">
-        <p style="color: steelblue; font-size: 1.2em;">Use slider bar to select a date; use scroll wheel or double-click
-          to zoom in; hover over a county to show details.</p>
       </div>
-    </div>
+    </div> -->
+    <h2 class="week"></h2>
     <div class="slider" style="margin: 10px 0px 15px 0px;"></div>
 
     <button type="button" style="font-size: 15px;" id="showCity">Show Cities</button>
@@ -420,21 +418,21 @@
             // Format tooltip message
             let info = (data.has(d.id)) ?
               `
-        <p><strong>${d.properties.name}, ${states.get(d.id.slice(0, 2)).name}</strong></p>
-        <p>${data.get(d.id).date}</p>
-        <table>
-        <tbody>
-        <tr><td class='wide'>Number of confirmed cases:</td><td>${data.get(d.id).cases}</td></tr>
-        <tr><td class='wide'>Number of confirmed deaths:</td><td>${data.get(d.id).deaths}</td></tr>
-        <tr><td class='wide'>Death rate:</td><td>${d3.format(".1%")(+data.get(d.id).deaths / +data.get(d.id).cases)}</td></tr>
-        </tbody>
-        </table>
-        <div id="my-scatter"></div>
-        ` :
+              <p><strong>${d.properties.name}, ${states.get(d.id.slice(0, 2)).name}</strong></p>
+              <p>${data.get(d.id).date}</p>
+              <table>
+                <tbody>
+                  <tr><td class='wide'>Number of confirmed cases:</td><td>${data.get(d.id).cases}</td></tr>
+                  <tr><td class='wide'>Number of confirmed deaths:</td><td>${data.get(d.id).deaths}</td></tr>
+                  <tr><td class='wide'>Death rate:</td><td>${d3.format(".1%")(+data.get(d.id).deaths / +data.get(d.id).cases)}</td></tr>
+                </tbody>
+              </table>
+              <div id="my-scatter"></div>
+              ` :
               `
-        <p><strong>${d.properties.name}, ${states.get(d.id.slice(0, 2)).name}</strong></p>
-        <p>Data not available.</p>
-        ` ;
+              <p><strong>${d.properties.name}, ${states.get(d.id.slice(0, 2)).name}</strong></p>
+              <p>Data not available.</p>
+              ` ;
             tooltip.transition()
               .duration(250)
               .style("opacity", 1);
@@ -482,8 +480,8 @@
                 .attr("transform", "translate(0," + height + ")")
                 .call(d3.axisBottom(x).ticks(d3.timeSunday.every(4)));
               // Add Y axis
-              let y = d3.scalePow()
-                .exponent(0.5)
+              let y = d3.scaleLinear()
+                // .exponent(0.5)
                 .domain([0, d3.max(data_county[1].values, function (d) { return d.value; })])
                 .range([height, 0]);
               svg_county.append("g")
@@ -641,7 +639,7 @@
         });
 
       // Set the initial date to March 1, 2020
-      update(9);
+      update(30);
     }
     );
 

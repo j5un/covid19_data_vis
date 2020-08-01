@@ -41,7 +41,7 @@
     h1,
     h2 {
       line-height: 1em;
-      font-size: 1.75em;
+      font-size: 2em;
       font-weight: 900;
       color: #000;
     }
@@ -59,11 +59,6 @@
     .county {
       fill: #fff;
       stroke: "none";
-    }
-
-    .scatter {
-      margin: 10px 30px 30px 60px width=370px,
-        height=360px;
     }
 
     input {
@@ -128,8 +123,8 @@
 
   <div id="content">
     <h1>Visualizing the COVID-19 Outbreak in the U.S.</h1>
-    <p>
-      Need a scatter plot here!
+    <p style="color: steelblue; font-size: 1.2em;">
+      Below is a plot of the numbers of total COVID-19 cases and deaths in the US against time. Hover over the plot to see details.
     </p>
     <div id="plot"></div>
     <div style="width: 100%; overflow: hidden;">
@@ -145,7 +140,7 @@
   <script>
     var parseDate = d3.timeParse("%Y-%m-%d");
     var formatDate = d3.timeFormat("%b %d, %Y");
-    d3.csv("us-total-covid19-daily.csv").then(function (data) {
+    d3.csv("us-total-covid19-raw.csv").then(function (data) {
       // Set up time series
       var allGroup = ["deaths", "cases"];
       var dataByDay = allGroup.map(function (grpName) { // .map allows to do something for each element of the list
@@ -156,15 +151,14 @@
           })
         };
       });
-      console.log(JSON.stringify(dataByDay));
 
       // Color scheme
-      let myColor = d3.scaleOrdinal()
+      var myColor = d3.scaleOrdinal()
         .domain(allGroup)
         .range(d3.schemeSet2);
 
       // Set up plotting area
-      let margin = { top: 20, right: 60, bottom: 30, left: 40 },
+      var margin = { top: 20, right: 100, bottom: 60, left: 110 },
         width = 1200 - margin.left - margin.right,
         height = 640 - margin.top - margin.bottom;
 
@@ -177,33 +171,56 @@
         .attr("transform",
           "translate(" + margin.left + "," + margin.top + ")");
 
+      var tooltip = d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+
       // Add X axis
-      let x = d3.scaleTime()
+      var x = d3.scaleTime()
         .domain(d3.extent(dataByDay[1].values, function (d) { return d.time; }))
         .range([0, width]);
       svg.append("g")
+        .style("font-size", 15)
         .attr("transform", "translate(0," + height + ")")
-        .call(d3.axisBottom(x).ticks(d3.timeSunday.every(4)));
+        .call(d3.axisBottom(x).ticks(d3.timeSunday.every(3)));
+      // text label for the x axis
+      svg.append("text")
+        .attr("transform",
+          "translate(" + (width / 2) + " ," +
+          (height + margin.top + 20) + ")")
+        .style("text-anchor", "middle")
+        .style("font-size", 20)
+        .text("Date");
+
       // Add Y axis
-      let y = d3.scalePow()
-        .exponent(0.5)
+      var y = d3.scaleLinear()
         .domain([0, d3.max(dataByDay[1].values, function (d) { return d.value; })])
         .range([height, 0]);
       svg.append("g")
-        .call(d3.axisLeft(y).ticks(6));
+        .style("font-size", 15)
+        .call(d3.axisLeft(y).ticks(10));
+      // text label for the y axis
+      svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0 - margin.left)
+        .attr("x", 0 - (height / 2))
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .style("font-size", 20)
+        .text("Number of Cases");
 
       // Add the lines
-      let line = d3.line().curve(d3.curveBasis)
+      var line = d3.line().curve(d3.curveBasis)
         .x(function (d) { return x(+d.time) })
-        .y(function (d) { return y(+d.value) })
+        .y(function (d) { return y(+d.value) });
       svg.selectAll("myLines")
         .data(dataByDay)
         .enter()
         .append("path")
         .attr("d", function (d) { return line(d.values) })
         .style("stroke", function (d) { return myColor(d.name) })
-        .style("stroke-width", 4)
-        .style("fill", "none")
+        .style("stroke-width", 2)
+        .style("fill", "none");
 
       // Add the points
       svg.selectAll("myDots") // First we need to enter in a group
@@ -211,14 +228,31 @@
         .enter()
         .append("g")
         .style("fill", function (d) { return myColor(d.name) })
+        .style("opacity", "0.8")
         .selectAll("myPoints") // Second we need to enter in the 'values' part of this group
         .data(function (d) { return d.values })
         .enter()
         .append("circle")
         .attr("cx", function (d) { return x(d.time) })
         .attr("cy", function (d) { return y(d.value) })
-        .attr("r", 5)
+        .attr("r", 3)
         .style("stroke", "white")
+        .on("mouseover", function (d) {
+          // Format tooltip message
+          let info =
+            ` <p><strong>Number of cases on ${formatDate(d.time)}: ${d.value}</strong></p> `;
+          tooltip.transition()
+            .duration(250)
+            .style("opacity", 1);
+          tooltip.html(info)
+            .style("left", (d3.event.pageX + 15) + "px")
+            .style("top", (d3.event.pageY - 28) + "px");
+        })
+        .on("mouseout", function (d) {
+          tooltip.transition()
+            .duration(250)
+            .style("opacity", 0);
+        });
 
       // Add a legend at the end of each line
       svg.selectAll("myLabels")
@@ -231,7 +265,113 @@
         .attr("x", 12) // shift the text a bit more right
         .text(function (d) { return d.name; })
         .style("fill", function (d) { return myColor(d.name) })
-        .style("font-size", 15)
+        .style("font-size", 20);
+
+      // annotation
+      notes = [
+        {
+          "time": parseDate("2020-01-21"),
+          "value": 1,
+          "note": "Jan. 21: 1st confirmed case in the United States"
+        },
+        {
+          "time": parseDate("2020-02-05"),
+          "value": 12,
+          "note": "Feb. 5: Diamond Princess cruise ship quarantined"
+        },
+        {
+          "time": parseDate("2020-02-12"),
+          "value": 14,
+          "note": "Feb. 12: 1st American fatality from COVID-19"
+        },
+        {
+          "time": parseDate("2020-02-26"),
+          "value": 60,
+          "note": "Feb. 26: 1st case of suspected local transmission in the US"
+        },
+        {
+          "time": parseDate("2020-03-03"),
+          "value": 125,
+          "note": "Mar. 3: CDC lifts testing restrictions"
+        },
+        {
+          "time": parseDate("2020-03-13"),
+          "value": 2224,
+          "note": "Mar. 13: President Trump declares a US national emergency"
+        },
+        {
+          "time": parseDate("2020-03-17"),
+          "value": 5906,
+          "note": "Mar. 17: Northern Californians ordered to shelter in place"
+        },
+        {
+          "time": parseDate("2020-03-20"),
+          "value": 18012,
+          "note": "Mar. 20: New York City declared US outbreak epicenter"
+        },
+        {
+          "time": parseDate("2020-03-26"),
+          "value": 85570,
+          "note": "Mar. 26: US leads the world in COVID-19 cases"
+        },
+        {
+          "time": parseDate("2020-04-04"),
+          "value": 312525,
+          "note": "Apr. 4: New York sets single-day record of 12k new cases"
+        },
+        {
+          "time": parseDate("2020-05-27"),
+          "value": 100422,
+          "note": "May 27: US reaches 100k deaths"
+        },
+        {
+          "time": parseDate("2020-06-14"),
+          "value": 115768,
+          "note": "Jun. 11-17: Cases in Arizona, South Carolina and Florida soar"
+        },
+        {
+          "time": parseDate("2020-07-12"),
+          "value": 134977,
+          "note": "Jul. 12: Florida records 15k new cases in one day"
+        }
+      ]
+
+      var markerBoxWidth = 10, markerBoxHeight = 10;
+      var refX = markerBoxWidth / 2, refY = markerBoxHeight / 2;
+      var arrowPoints = [[0, 0], [0, 10], [10, 5]];
+      svg.append('defs')
+        .append('marker')
+        .attr('id', 'arrow')
+        .attr('viewBox', [0, 0, markerBoxWidth, markerBoxHeight])
+        .attr('refX', refX)
+        .attr('refY', refY)
+        .attr('markerWidth', markerBoxWidth)
+        .attr('markerHeight', markerBoxHeight)
+        .attr('orient', 'auto-start-reverse')
+        .append('path')
+        .attr('d', d3.line()(arrowPoints))
+        .attr('stroke', 'none')
+        .attr('fill', 'black');
+
+      notes.forEach(function (d, i) {
+        console.log("translate(" + x(d.time) + "," + y(d.value) + ")");
+        let pin = svg.append("g")
+          .attr("id", "note-" + i)
+          .attr("transform", "translate(" + x(d.time) + "," + y(d.value) + ")");
+        pin.append('path')
+          .attr('d', d3.line()([[5, -15], [15, -35]]))
+          .attr('stroke', 'black')
+          .attr('marker-start', 'url(#arrow)')
+          .attr('fill', 'none');
+        pin.append("text")
+          .attr("dx", 45)
+          .attr("dy", 5)
+          .text(d.note)
+          .style("font-size", 15)
+          .style("fill", "black")
+          .attr("transform", "rotate(-65)");;
+      });
+
     });
   </script>
 </body>

@@ -41,7 +41,7 @@
     h1,
     h2 {
       line-height: 1em;
-      font-size: 2em;
+      font-size: 1.75em;
       font-weight: 900;
       color: #000;
     }
@@ -54,6 +54,11 @@
 
     p {
       margin: 10px 0px 0px 0px;
+      font-size: 1.2em;
+    }
+
+    li {
+      font-size: 1.2em;
     }
 
     .county {
@@ -123,10 +128,10 @@
 
   <div id="content">
     <h1>Visualizing the COVID-19 Outbreak in the U.S.</h1>
-    <p style="color: steelblue; font-size: 1.2em;">
-      Below is a choropleth map of the total confirmed cases in the U.S on a county level. 
-      By March 22, 2020, local outbreaks were mostly happening in a few major cities along the west and east coast.
-      Hover over a county to see details.
+    <p>
+      Below is a choropleth map of the total confirmed cases of US counties on a June 14, 2020, which is the second
+      "elbow" point on the line chart. The pandemic has spread across the entire US with new epicenters emerging. 
+      Hover over couties to see actual numbers.
     </p>
     <h2 class="week"></h2>
     <div id="plot"></div>
@@ -438,15 +443,15 @@
               .lower();
           });
 
-        annotate("U.S.", "Mar 19: more than 10K confirmed cases in the U.S.");
-        annotate("Seattle", "Jan 21: first COVID-19 case confirmed by CDC");
-        annotate("San Francisco", "Mar 16: nation's first shelter in place warning issued");
-        annotate("New York", "Mar 22: NYC declared US outbreak epicenter");
+        annotate("U.S.", "Jun. 10: more than 2M confirmed cases in the U.S.");
+        annotate("Miami", "Jun. 11-17: Cases soar in FL & SC");
+        annotate("Phoenix", "Jun. 11-17: Cases soar in AZ");
+        annotate("Los Angeles", "In June, cases grow more rapidly in CA");
 
       }
 
       // Set the initial date to March 1, 2020
-      update(12);
+      update(24);
     }
     );
 

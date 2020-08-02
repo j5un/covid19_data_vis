@@ -41,7 +41,7 @@
     h1,
     h2 {
       line-height: 1em;
-      font-size: 2em;
+      font-size: 1.75em;
       font-weight: 900;
       color: #000;
     }
@@ -54,6 +54,11 @@
 
     p {
       margin: 10px 0px 0px 0px;
+      font-size: 1.2em;
+    }
+
+    li {
+      font-size: 1.2em;
     }
 
     .county {
@@ -123,10 +128,15 @@
 
   <div id="content">
     <h1>Visualizing the COVID-19 Outbreak in the U.S.</h1>
-    <p style="color: steelblue; font-size: 1.2em;">
-      Below is a plot of the numbers of total COVID-19 cases and deaths in the US against time. Hover over the plot to see details.
+    <p>
+      Below is a choropleth map of the total confirmed cases of US counties on a March 22, 2020, which is the first
+      "elbow" point on the line chart. Local outbreaks were mostly happening in a few major coastal cities. Hover
+      over couties to see actual numbers.
     </p>
+    <h2 class="week"></h2>
     <div id="plot"></div>
+    <p style="margin-bottom: 10px;">Source: <a href="https://github.com/nytimes/covid-19-data">
+        Coronavirus (COVID-19) Data in the United States</a> published by New York Times</p>
     <div style="width: 100%; overflow: hidden;">
       <div style="float: left;">
         <button onclick="document.location='index.html'" class="buttonA">Previous</button>
@@ -137,200 +147,198 @@
     </div>
   </div>
 
+  <!-- java script section -->
   <script>
+    var zoom = d3.zoom().on("zoom", function () {
+      svg.attr("transform", d3.event.transform)
+    });
+
+    var svg = d3
+      .select("#plot")
+      .append("svg")
+      .attr("id", "baselayer")
+      .attr("width", 1200)
+      .attr("height", 640)
+      .append("g");
+
+    var path = d3.geoPath();
+
+    // Set up color scale
+    var color = d3.scalePow()
+      .exponent(0.3)
+      .domain([0, 40]) // ~200000^0.3
+      .range(d3.schemeReds[7]);
+
+    // Set up time scale
     var parseDate = d3.timeParse("%Y-%m-%d");
     var formatDate = d3.timeFormat("%b %d, %Y");
-    d3.csv("us-total-covid19-raw.csv").then(function (data) {
-      // Set up time series
-      var allGroup = ["deaths", "cases"];
-      var dataByDay = allGroup.map(function (grpName) { // .map allows to do something for each element of the list
-        return {
-          name: grpName,
-          values: data.map(function (d) {
-            return { time: parseDate(d.date), value: +d[grpName] };
-          })
-        };
-      });
 
-      // Color scheme
-      var myColor = d3.scaleOrdinal()
-        .domain(allGroup)
-        .range(d3.schemeSet2);
+    var start = new Date(parseDate("2020-03-08"));
+    console.log("Start Date: " + formatDate(start));
 
-      // Set up plotting area
-      var margin = { top: 20, right: 100, bottom: 60, left: 110 },
-        width = 1200 - margin.left - margin.right,
-        height = 640 - margin.top - margin.bottom;
+    var end = new Date(parseDate("2020-07-26"));
+    console.log("End Date: " + formatDate(end));
 
-      var svg = d3
-        .select("#plot")
-        .append("svg")
-        .attr("width", 1200)
-        .attr("height", 640)
-        .append("g")
-        .attr("transform",
-          "translate(" + margin.left + "," + margin.top + ")");
+    var timeScale = d3.scaleTime()
+      .domain([start, end])
+      .range([0, d3.timeDay.count(start, end)])
+    console.log("Total number of days: " + d3.timeDay.count(start, end));
+
+    // Read data
+    var promises = [];
+    promises.push(d3.json("counties-albers-10m.json"));
+    promises.push(d3.csv("us-counties-covid19-weekly.csv"));
+    promises.push(d3.csv("us-large-cities.csv"));
+
+    Promise.all(promises).then(function (files) {
+
+      var topo_data = files[0];
+      var states = new Map(
+        topo_data.objects.states.geometries.map(function (d) {
+          return [d.id, d.properties];
+        }
+        )
+      );
+
+      var county_data =
+        topojson.feature(
+          topo_data,
+          topo_data.objects.counties
+        ).features;
+      // Take special care of New York City
+      new_york = [36081, 36005, 36047, 36085];
+      county_data.forEach(function (d) {
+        if (new_york.includes(+d.id)) {
+          d.id = "36061";
+          d.properties.name = "New York City"
+        }
+      }
+      );
+
+      var covid_data = files[1];
+
+      var dataByWeek = d3.nest()
+        .key(function (d) { return +d.week; })
+        .map(covid_data);
+
+      var dataByCounty = d3.nest()
+        .key(function (d) { return d.fips; })
+        .map(covid_data);
+
+      svg.append("g")
+        .attr("id", "map")
+        .selectAll("path")
+        .data(county_data)
+        .join("path")
+        .attr("class", "county")
+        .attr("d", path)
+        .style("fill", color(0));
+
+      svg.select("#map")
+        .append("path")
+        .style("fill", "none")
+        .style("stroke", "white")
+        .attr(
+          "d",
+          path(
+            topojson.mesh(
+              topo_data,
+              topo_data.objects.states,
+              function (a, b) {
+                return a !== b;
+              }
+            )
+          )
+        );
 
       var tooltip = d3.select("body").append("div")
         .attr("class", "tooltip")
         .style("opacity", 0);
 
-      // Add X axis
-      var x = d3.scaleTime()
-        .domain(d3.extent(dataByDay[1].values, function (d) { return d.time; }))
-        .range([0, width]);
-      svg.append("g")
-        .style("font-size", 15)
-        .attr("transform", "translate(0," + height + ")")
-        .call(d3.axisBottom(x).ticks(d3.timeSunday.every(3)));
-      // text label for the x axis
-      svg.append("text")
-        .attr("transform",
-          "translate(" + (width / 2) + " ," +
-          (height + margin.top + 20) + ")")
-        .style("text-anchor", "middle")
-        .style("font-size", 20)
-        .text("Date");
+      var legendText = ["10", "10²", "10³", "10⁴", "10⁵", "10⁶"];
+      var legendColors = [color(1e1), color(1e2),
+      color(1e3), color(1e4),
+      color(1e5), color(1e6)];
 
-      // Add Y axis
-      var y = d3.scaleLinear()
-        .domain([0, d3.max(dataByDay[1].values, function (d) { return d.value; })])
-        .range([height, 0]);
-      svg.append("g")
-        .style("font-size", 15)
-        .call(d3.axisLeft(y).ticks(10));
-      // text label for the y axis
-      svg.append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("y", 0 - margin.left)
-        .attr("x", 0 - (height / 2))
-        .attr("dy", "1em")
-        .style("text-anchor", "middle")
-        .style("font-size", 20)
-        .text("Number of Cases");
+      // var legend = svg.append("g")
+      //   .attr("id", "legend");
+      var legend = d3
+        .select("#baselayer")
+        .append("g")
+        .attr("id", "legend")
+        .attr("transform", "translate(0,10)");
 
-      // Add the lines
-      var line = d3.line().curve(d3.curveBasis)
-        .x(function (d) { return x(+d.time) })
-        .y(function (d) { return y(+d.value) });
-      svg.selectAll("myLines")
-        .data(dataByDay)
-        .enter()
-        .append("path")
-        .attr("d", function (d) { return line(d.values) })
-        .style("stroke", function (d) { return myColor(d.name) })
-        .style("stroke-width", 2)
-        .style("fill", "none");
-
-      // Add the points
-      svg.selectAll("myDots") // First we need to enter in a group
-        .data(dataByDay)
+      var legenditem = legend.selectAll(".legenditem")
+        .data(d3.range(6))
         .enter()
         .append("g")
-        .style("fill", function (d) { return myColor(d.name) })
-        .style("opacity", "0.8")
-        .selectAll("myPoints") // Second we need to enter in the 'values' part of this group
-        .data(function (d) { return d.values })
+        .attr("class", "legenditem")
+        .attr("transform", function (d, i) { return "translate(" + i * 31 + ",0)"; });
+
+      var offset_x = 715;
+      var offset_y = 15;
+      legenditem.append("rect")
+        .attr("x", offset_x)
+        .attr("y", offset_y)
+        .attr("width", 30)
+        .attr("height", 6)
+        .attr("class", "rect")
+        .style("fill", function (d, i) { return legendColors[i]; });
+
+      legenditem.append("text")
+        .attr("x", offset_x + 15)
+        .attr("y", offset_y - 5)
+        .style("text-anchor", "middle")
+        .text(function (d, i) { return legendText[i]; });
+
+      d3.select(".legenditem:nth-child(" + legendText.length + ")")
+        .append("g")
+        .attr("transform", "translate(25,0)")
+        .append("text")
+        .attr("x", offset_x + 15)
+        .attr("y", offset_y - 5)
+        .style("text-anchor", "start")
+        .text("(number of total confirmed cases)");
+
+      // Annotation of major cities
+      var projection = d3.geoAlbersUsa().scale(1300).translate([487.5, 305]); // https://github.com/topojson/us-atlas
+
+      var cities = svg.append("g")
+        .attr("id", "cities")
+        .selectAll("circle")
+        .data(files[2])
         .enter()
-        .append("circle")
-        .attr("cx", function (d) { return x(d.time) })
-        .attr("cy", function (d) { return y(d.value) })
-        .attr("r", 3)
-        .style("stroke", "white")
-        .on("mouseover", function (d) {
-          // Format tooltip message
-          let info =
-            ` <p><strong>Number of cases on ${formatDate(d.time)}: ${d.value}</strong></p> `;
-          tooltip.transition()
-            .duration(250)
-            .style("opacity", 1);
-          tooltip.html(info)
-            .style("left", (d3.event.pageX + 15) + "px")
-            .style("top", (d3.event.pageY - 28) + "px");
-        })
-        .on("mouseout", function (d) {
-          tooltip.transition()
-            .duration(250)
-            .style("opacity", 0);
+        .append("g")
+        .attr("transform", function (d) {
+          // console.log(projection([+d.LONGITUDE, +d.LATITUDE]));
+          return "translate(" + projection([
+            +d.LONGITUDE,
+            +d.LATITUDE
+          ]) + ")";
         });
 
-      // Add a legend at the end of each line
-      svg.selectAll("myLabels")
-        .data(dataByDay)
-        .enter()
-        .append("g")
-        .append("text")
-        .datum(function (d) { return { name: d.name, value: d.values[d.values.length - 1] }; }) // keep only the last value of each time series
-        .attr("transform", function (d) { return "translate(" + x(d.value.time) + "," + y(d.value.value) + ")"; }) // Put the text at the position of the last point
-        .attr("x", 12) // shift the text a bit more right
-        .text(function (d) { return d.name; })
-        .style("fill", function (d) { return myColor(d.name) })
-        .style("font-size", 20);
+      cities.append("circle")
+        .attr("r", 2)
+        .attr("fill", "rgb(64,64,64)");
+      // .attr("cx", function (d) { return projection([+d.LONGITUDE, +d.LATITUDE])[0]; })
+      // .attr("cy", function (d) { return projection([+d.LONGITUDE, +d.LATITUDE])[1]; });
+      // .attr('fill','rgb(12,240,233)');
 
-      // annotation
-      notes = [
-        {
-          "time": parseDate("2020-01-21"),
-          "value": 1,
-          "note": "Jan. 21: 1st confirmed case in the United States"
-        },
-        {
-          "time": parseDate("2020-02-06"),
-          "value": 12,
-          "note": "Feb. 6: 1st American fatality from COVID-19"
-        },
-        {
-          "time": parseDate("2020-02-26"),
-          "value": 60,
-          "note": "Feb. 26: 1st case of suspected local transmission in the US"
-        },
-        {
-          "time": parseDate("2020-03-03"),
-          "value": 125,
-          "note": "Mar. 3: CDC lifts testing restrictions"
-        },
-        {
-          "time": parseDate("2020-03-13"),
-          "value": 2224,
-          "note": "Mar. 13: President Trump declares a US national emergency"
-        },
-        {
-          "time": parseDate("2020-03-17"),
-          "value": 5906,
-          "note": "Mar. 17: Northern Californians ordered to shelter in place"
-        },
-        {
-          "time": parseDate("2020-03-20"),
-          "value": 18012,
-          "note": "Mar. 20: New York City declared US outbreak epicenter"
-        },
-        {
-          "time": parseDate("2020-03-26"),
-          "value": 85570,
-          "note": "Mar. 26: US leads the world in COVID-19 cases"
-        },
-        {
-          "time": parseDate("2020-04-04"),
-          "value": 312525,
-          "note": "Apr. 4: New York sets single-day record of 12k new cases"
-        },
-        {
-          "time": parseDate("2020-05-27"),
-          "value": 100422,
-          "note": "May 27: US reaches 100k deaths"
-        },
-        {
-          "time": parseDate("2020-06-14"),
-          "value": 115768,
-          "note": "Jun. 11-17: Cases in Arizona, South Carolina and Florida soar"
-        },
-        {
-          "time": parseDate("2020-07-12"),
-          "value": 134977,
-          "note": "Jul. 12: Florida records 15k new cases in one day"
-        }
-      ]
+      cities.append("text")
+        .attr("dx", 5)
+        .attr("dy", 15)
+        .text(function (d) { return d.NAME; })
+        .style("font-size", 15)
+        .style("fill", "rgb(64,64,64)");
 
+      // Annotations of timeline
+      var city_loc = new Map(
+        files[2].map(function (d) {
+          return [d.NAME, { "longitude": +d.LONGITUDE, "latitude": +d.LATITUDE }];
+        })
+      );
+
+      var annotation = svg.append("g").attr("id", "annotation");
       var markerBoxWidth = 10, markerBoxHeight = 10;
       var refX = markerBoxWidth / 2, refY = markerBoxHeight / 2;
       var arrowPoints = [[0, 0], [0, 10], [10, 5]];
@@ -348,26 +356,105 @@
         .attr('stroke', 'none')
         .attr('fill', 'black');
 
-      notes.forEach(function (d, i) {
-        console.log("translate(" + x(d.time) + "," + y(d.value) + ")");
-        let pin = svg.append("g")
-          .attr("id", "note-" + i)
-          .attr("transform", "translate(" + x(d.time) + "," + y(d.value) + ")");
-        pin.append('path')
-          .attr('d', d3.line()([[5, -15], [15, -35]]))
-          .attr('stroke', 'black')
-          .attr('marker-start', 'url(#arrow)')
-          .attr('fill', 'none');
-        pin.append("text")
-          .attr("dx", 45)
-          .attr("dy", 5)
-          .text(d.note)
-          .style("font-size", 15)
-          .style("fill", "black")
-          .attr("transform", "rotate(-65)");;
-      });
+      function annotate(city, info) {
+        if (city != "U.S.") {
+          let pin = annotation.append("g")
+            .attr("id", city)
+            .attr("transform", function (d) {
+              return "translate(" + projection([
+                +city_loc.get(city).longitude,
+                +city_loc.get(city).latitude
+              ]) + ")";
+            });
+          pin.append('path')
+            .attr('d', d3.line()([[10, -6], [25, -15]]))
+            .attr('stroke', 'black')
+            .attr('marker-start', 'url(#arrow)')
+            .attr('fill', 'none');
+          pin.append("text")
+            .attr("dx", 30)
+            .attr("dy", -10)
+            .text(info)
+            .style("font-size", 15)
+            .style("fill", "black");
+        } else {
+          let pin = annotation.append("g")
+            .attr("id", "us")
+            .append("text")
+            .attr("dx", 265)
+            .attr("dy", 15)
+            .text(info)
+            .style("font-size", 17)
+            .style("fill", "black");
+        }
+      }
 
-    });
+      function update(week) {
+        // slider.property("value", week);
+        d3.select(".week").text("Date: " + formatDate(timeScale.invert((week - 10) * 7)));
+
+        let data = d3.map();
+        for (let value of dataByWeek.get(week)) {
+          data.set(value["fips"], { "date": value["date"], "cases": value["cases"], "deaths": value["deaths"] });
+        }
+
+        d3.selectAll(".county")
+          .style("fill", function (d) {
+            // color according to case number
+            return (data.has(d.id)) ? color(data.get(d.id).cases) : color(1);
+          }
+          )
+          .on("mouseover", function (d) {
+            // Format tooltip message
+            let info = (data.has(d.id)) ?
+              `
+              <p><strong>${d.properties.name}, ${states.get(d.id.slice(0, 2)).name}</strong></p>
+              <p>${data.get(d.id).date}</p>
+              <table>
+                <tbody>
+                  <tr><td class='wide'>Number of confirmed cases:</td><td>${data.get(d.id).cases}</td></tr>
+                  <tr><td class='wide'>Number of confirmed deaths:</td><td>${data.get(d.id).deaths}</td></tr>
+                  <tr><td class='wide'>Death rate:</td><td>${d3.format(".1%")(+data.get(d.id).deaths / +data.get(d.id).cases)}</td></tr>
+                </tbody>
+              </table>
+              ` :
+              `
+              <p><strong>${d.properties.name}, ${states.get(d.id.slice(0, 2)).name}</strong></p>
+              <p>Data not available.</p>
+              ` ;
+            tooltip.transition()
+              .duration(250)
+              .style("opacity", 1);
+            tooltip.html(info)
+              .style("left", (d3.event.pageX + 15) + "px")
+              .style("top", (d3.event.pageY - 28) + "px");
+
+            // Highlight selected county
+            d3.select(this)
+              .style("stroke", "black")
+              .raise();
+          })
+          .on("mouseout", function (d) {
+            tooltip.transition()
+              .duration(250)
+              .style("opacity", 0);
+            d3.select(this)
+              .style("stroke", "none")
+              .lower();
+          });
+
+        annotate("U.S.", "Mar. 19: more than 10K confirmed cases in the U.S.");
+        annotate("Seattle", "Jan. 21: first COVID-19 case confirmed by CDC");
+        annotate("San Francisco", "Mar. 16: nation's first shelter in place warning issued");
+        annotate("New York", "Mar. 22: NYC declared US outbreak epicenter");
+
+      }
+
+      // Set the initial date to March 1, 2020
+      update(12);
+    }
+    );
+
   </script>
 </body>
 
